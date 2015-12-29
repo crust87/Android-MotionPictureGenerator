@@ -79,7 +79,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.player_activity);
+        setContentView(R.layout.main_activity);
 
         videoFrame = (AspectRatioFrameLayout) findViewById(R.id.video_frame);
         surfaceView = (SurfaceView) findViewById(R.id.surface_view);
@@ -91,10 +91,21 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d("TEST", "onActivityResult " + resultCode + " " + requestCode);
         if (requestCode == 1000 && resultCode == RESULT_OK) {
-            Uri selectedVideoUri = data.getData();
-            Intent intent = new Intent(this, MainActivity.class).setData(selectedVideoUri);
-            startActivity(intent);
+            releasePlayer();
+            playerPosition = 0;
+
+            contentUri = data.getData();
+            if (player == null) {
+                if (!maybeRequestPermission()) {
+                    preparePlayer(true);
+                }
+            } else {
+                player.setBackgrounded(false);
+
+                Log.d("TEST", "setBackgrounded");
+            }
         }
     }
 
@@ -103,27 +114,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         lIntent.setType("video/*");
         lIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivityForResult(lIntent, 1000);
-    }
-
-    @Override
-    public void onNewIntent(Intent intent) {
-        releasePlayer();
-        playerPosition = 0;
-        setIntent(intent);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        Intent intent = getIntent();
-        contentUri = intent.getData();
-        if (player == null) {
-            if (!maybeRequestPermission()) {
-                preparePlayer(true);
-            }
-        } else {
-            player.setBackgrounded(false);
-        }
     }
 
     @Override
@@ -218,6 +208,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         }
         player.setSurface(surfaceView.getHolder().getSurface());
         player.setPlayWhenReady(playWhenReady);
+
+        Log.d("TEST", "playWhenReady" + playWhenReady);
     }
 
     private void releasePlayer() {
