@@ -20,8 +20,10 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.MenuItem;
@@ -32,6 +34,7 @@ import android.widget.Toast;
 
 import com.crust87.motionpicturegenerator.player.ExoVideoPlayer;
 import com.crust87.motionpicturegenerator.player.ExtractorRendererBuilder;
+import com.crust87.videotrackview.VideoTrackView;
 import com.google.android.exoplayer.AspectRatioFrameLayout;
 import com.google.android.exoplayer.ExoPlaybackException;
 import com.google.android.exoplayer.MediaCodecTrackRenderer.DecoderInitializationException;
@@ -67,11 +70,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
     private ExoVideoPlayer player;
     private boolean playerNeedsPrepare;
 
+    private VideoTrackView mAnchorVideoTrackView;
+    private AnchorOverlay mAnchorOverlay;
+
     private long playerPosition;
 
     private Uri contentUri;
 
     private AudioCapabilitiesReceiver audioCapabilitiesReceiver;
+
+    // Working Variables
+    private int mVideoSeek;			// generated video seek
+    private int mVideoDuration;		// generated video duration
 
     // Activity lifecycle
 
@@ -82,16 +92,41 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         setContentView(R.layout.main_activity);
 
         videoFrame = (AspectRatioFrameLayout) findViewById(R.id.video_frame);
+        mAnchorVideoTrackView = (VideoTrackView) findViewById(R.id.anchorVideoTrackView);
         surfaceView = (SurfaceView) findViewById(R.id.surface_view);
         surfaceView.getHolder().addCallback(this);
 
         audioCapabilitiesReceiver = new AudioCapabilitiesReceiver(this, this);
         audioCapabilitiesReceiver.register();
+
+        mAnchorOverlay = new AnchorOverlay(getApplicationContext());
+        mAnchorVideoTrackView.setVideoTrackOverlay(mAnchorOverlay);
+
+        mAnchorOverlay.setOnUpdateAnchorListener(new AnchorOverlay.OnUpdateAnchorListener() {
+            @Override
+            public void onUpdatePositionStart() {
+                player.getPlayerControl().pause();
+            }
+
+            @Override
+            public void onUpdatePosition(int seek, int duration) {
+                mVideoSeek = seek;
+                mVideoDuration = duration;
+            }
+
+            @Override
+            public void onUpdatePositionEnd(int seek, int duration) {
+                mVideoSeek = seek;
+                mVideoDuration = duration;
+
+                player.getPlayerControl().seekTo(mVideoSeek);
+                player.getPlayerControl().start();
+            }
+        });
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.d("TEST", "onActivityResult " + resultCode + " " + requestCode);
         if (requestCode == 1000 && resultCode == RESULT_OK) {
             releasePlayer();
             playerPosition = 0;
@@ -103,8 +138,24 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
                 }
             } else {
                 player.setBackgrounded(false);
+            }
 
-                Log.d("TEST", "setBackgrounded");
+            String originalPath = getRealPathFromURI(contentUri);
+            mAnchorVideoTrackView.setVideo(originalPath);
+        }
+    }
+
+    public String getRealPathFromURI(Uri contentUri) {
+        Cursor cursor = null;
+        try {
+            String[] proj = { MediaStore.Images.Media.DATA };
+            cursor = getApplicationContext().getContentResolver().query(contentUri, proj, null, null, null);
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            return cursor.getString(column_index);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
             }
         }
     }
@@ -208,8 +259,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,
         }
         player.setSurface(surfaceView.getHolder().getSurface());
         player.setPlayWhenReady(playWhenReady);
-
-        Log.d("TEST", "playWhenReady" + playWhenReady);
     }
 
     private void releasePlayer() {

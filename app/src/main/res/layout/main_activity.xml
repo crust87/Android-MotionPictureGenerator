@@ -14,6 +14,7 @@
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -39,5 +40,14 @@
         android:layout_height="48dp"
         android:onClick="onLoadButtonClicked"
         android:text="LOAD VIDEO" />
+
+    <com.crust87.videotrackview.VideoTrackView
+        android:id="@+id/anchorVideoTrackView"
+        android:layout_width="match_parent"
+        android:layout_height="88dp"
+        android:layout_gravity="bottom"
+        app:screen_duration="30000"
+        app:thumbnail_per_screen="6"
+        app:track_padding="4dp" />
 
 </FrameLayout>
