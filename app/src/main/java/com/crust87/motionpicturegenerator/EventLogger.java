@@ -19,7 +19,7 @@ import android.media.MediaCodec.CryptoException;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.crust87.motionpicturegenerator.player.ExoVideoPlayer;
+import com.crust87.motionpicturegenerator.player.ExoMediaPlayer;
 import com.google.android.exoplayer.MediaCodecTrackRenderer.DecoderInitializationException;
 import com.google.android.exoplayer.TimeRange;
 import com.google.android.exoplayer.audio.AudioTrack;
@@ -30,8 +30,8 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-public class EventLogger implements ExoVideoPlayer.Listener, ExoVideoPlayer.InfoListener,
-        ExoVideoPlayer.InternalErrorListener {
+public class EventLogger implements ExoMediaPlayer.Listener, ExoMediaPlayer.InfoListener,
+        ExoMediaPlayer.InternalErrorListener {
 
     private static final String TAG = "EventLogger";
     private static final NumberFormat TIME_FORMAT;
@@ -47,7 +47,7 @@ public class EventLogger implements ExoVideoPlayer.Listener, ExoVideoPlayer.Info
     private long[] availableRangeValuesUs;
 
     public EventLogger() {
-        loadStartTimeMs = new long[ExoVideoPlayer.RENDERER_COUNT];
+        loadStartTimeMs = new long[ExoMediaPlayer.RENDERER_COUNT];
     }
 
     public void startSession() {
@@ -59,7 +59,7 @@ public class EventLogger implements ExoVideoPlayer.Listener, ExoVideoPlayer.Info
         Log.d(TAG, "end [" + getSessionTimeString() + "]");
     }
 
-    // ExoVideoPlayer.Listener
+    // ExoMediaPlayer.Listener
 
     @Override
     public void onStateChanged(boolean playWhenReady, int state) {
@@ -79,7 +79,7 @@ public class EventLogger implements ExoVideoPlayer.Listener, ExoVideoPlayer.Info
                 + ", " + pixelWidthHeightRatio + "]");
     }
 
-    // ExoVideoPlayer.InfoListener
+    // ExoMediaPlayer.InfoListener
 
     @Override
     public void onBandwidthSample(int elapsedMs, long bytes, long bitrateEstimate) {
@@ -124,7 +124,7 @@ public class EventLogger implements ExoVideoPlayer.Listener, ExoVideoPlayer.Info
                 + Integer.toString(trigger) + "]");
     }
 
-    // ExoVideoPlayer.InternalErrorListener
+    // ExoMediaPlayer.InternalErrorListener
 
     @Override
     public void onLoadError(int sourceId, IOException e) {
