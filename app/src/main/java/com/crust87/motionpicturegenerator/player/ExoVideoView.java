@@ -7,16 +7,10 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.MediaController;
-import android.widget.Toast;
 
 import com.crust87.motionpicturegenerator.EventLogger;
-import com.crust87.motionpicturegenerator.R;
-import com.google.android.exoplayer.ExoPlaybackException;
-import com.google.android.exoplayer.MediaCodecTrackRenderer;
-import com.google.android.exoplayer.MediaCodecUtil;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.audio.AudioCapabilitiesReceiver;
-import com.google.android.exoplayer.drm.UnsupportedDrmException;
 import com.google.android.exoplayer.metadata.GeobMetadata;
 import com.google.android.exoplayer.metadata.PrivMetadata;
 import com.google.android.exoplayer.metadata.TxxxMetadata;
@@ -37,11 +31,13 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
 
     private Context mContext;
 
-    private ExoMediaPlayer player;
+    private ExoMediaPlayer mMediaPlayer;
 
     private EventLogger eventLogger;
 
     private AudioCapabilitiesReceiver audioCapabilitiesReceiver;
+
+    private ExoMediaPlayer.Listener mListener;
 
     private Uri mContentUri;
 
@@ -96,41 +92,36 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
         mContentUri = contentUri;
 
         preparePlayer(true);
-//        if (player == null) {
-//            if (!maybeRequestPermission()) {
-//                preparePlayer(true);
-//            }
-//        } else {
-//            player.setBackgrounded(false);
-//        }
     }
 
     public void preparePlayer(boolean playWhenReady) {
-        if (player == null) {
-            player = new ExoMediaPlayer(getRendererBuilder());
-            player.addListener(this);
-            player.setMetadataListener(this);
-            player.seekTo(playerPosition);
+        if (mMediaPlayer == null) {
+            mMediaPlayer = new ExoMediaPlayer(getRendererBuilder());
+            mMediaPlayer.addListener(this);
+            mMediaPlayer.setMetadataListener(this);
+            mMediaPlayer.seekTo(playerPosition);
             playerNeedsPrepare = true;
             eventLogger = new EventLogger();
             eventLogger.startSession();
-            player.addListener(eventLogger);
-            player.setInfoListener(eventLogger);
-            player.setInternalErrorListener(eventLogger);
+            mMediaPlayer.addListener(eventLogger);
+            mMediaPlayer.setInfoListener(eventLogger);
+            mMediaPlayer.setInternalErrorListener(eventLogger);
         }
+
         if (playerNeedsPrepare) {
-            player.prepare();
+            mMediaPlayer.prepare();
             playerNeedsPrepare = false;
         }
-        player.setSurface(getHolder().getSurface());
-        player.setPlayWhenReady(playWhenReady);
+
+        mMediaPlayer.setSurface(getHolder().getSurface());
+        mMediaPlayer.setPlayWhenReady(playWhenReady);
     }
 
     private void releasePlayer() {
-        if (player != null) {
-            playerPosition = player.getCurrentPosition();
-            player.release();
-            player = null;
+        if (mMediaPlayer != null) {
+            playerPosition = mMediaPlayer.getCurrentPosition();
+            mMediaPlayer.release();
+            mMediaPlayer = null;
             eventLogger.endSession();
             eventLogger = null;
         }
@@ -145,67 +136,105 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
     // AudioCapabilitiesReceiver.Listener methods
     @Override
     public void onAudioCapabilitiesChanged(AudioCapabilities audioCapabilities) {
-        boolean backgrounded = player.getBackgrounded();
-        boolean playWhenReady = player.getPlayWhenReady();
+        boolean backgrounded = mMediaPlayer.getBackgrounded();
+        boolean playWhenReady = mMediaPlayer.getPlayWhenReady();
         releasePlayer();
         preparePlayer(playWhenReady);
-        player.setBackgrounded(backgrounded);
+        mMediaPlayer.setBackgrounded(backgrounded);
     }
 
     // MediaController.MediaPlayerControl implementation
     @Override
     public void start() {
-        player.getPlayerControl().start();
+        if(mMediaPlayer != null) {
+            mMediaPlayer.getPlayerControl().start();
+        }
     }
 
     @Override
     public void pause() {
-        player.getPlayerControl().pause();
+        if(mMediaPlayer != null) {
+            mMediaPlayer.getPlayerControl().pause();
+        }
     }
 
     @Override
     public int getDuration() {
-        return player.getPlayerControl().getDuration();
+        if(mMediaPlayer != null) {
+            return mMediaPlayer.getPlayerControl().getDuration();
+        } else {
+            return 0;
+        }
     }
 
     @Override
     public int getCurrentPosition() {
-        return player.getPlayerControl().getCurrentPosition();
+        if(mMediaPlayer != null) {
+            return mMediaPlayer.getPlayerControl().getCurrentPosition();
+        } else {
+            return 0;
+        }
     }
 
     @Override
     public void seekTo(int pos) {
-        player.getPlayerControl().seekTo(pos);
+        if(mMediaPlayer != null) {
+            mMediaPlayer.getPlayerControl().seekTo(pos);
+        }
     }
 
     @Override
     public boolean isPlaying() {
-        return player.getPlayerControl().isPlaying();
+        if(mMediaPlayer != null) {
+            return mMediaPlayer.getPlayerControl().isPlaying();
+        } else {
+            return false;
+        }
     }
 
     @Override
     public int getBufferPercentage() {
-        return player.getPlayerControl().getBufferPercentage();
+        if(mMediaPlayer != null) {
+            return mMediaPlayer.getPlayerControl().getBufferPercentage();
+        } else {
+            return 0;
+        }
     }
 
     @Override
     public boolean canPause() {
-        return player.getPlayerControl().canPause();
+        if(mMediaPlayer != null) {
+            return mMediaPlayer.getPlayerControl().canPause();
+        } else {
+            return false;
+        }
     }
 
     @Override
     public boolean canSeekBackward() {
-        return player.getPlayerControl().canSeekBackward();
+        if(mMediaPlayer != null) {
+            return mMediaPlayer.getPlayerControl().canSeekBackward();
+        } else {
+            return false;
+        }
     }
 
     @Override
     public boolean canSeekForward() {
-        return player.getPlayerControl().canSeekForward();
+        if(mMediaPlayer != null) {
+            return mMediaPlayer.getPlayerControl().canSeekForward();
+        } else {
+            return false;
+        }
     }
 
     @Override
     public int getAudioSessionId() {
-        return player.getPlayerControl().getAudioSessionId();
+        if(mMediaPlayer != null) {
+            return mMediaPlayer.getPlayerControl().getAudioSessionId();
+        } else {
+            return 0;
+        }
     }
 
     // ExoMediaPlayer.MetadataListener implementation
@@ -234,55 +263,31 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
     // ExoMediaPlayer.Listener implementation
     @Override
     public void onStateChanged(boolean playWhenReady, int playbackState) {
-        if (playbackState == com.google.android.exoplayer.ExoPlayer.STATE_ENDED) {
+        if(mListener != null) {
+            mListener.onStateChanged(playWhenReady, playbackState);
         }
     }
 
     @Override
     public void onError(Exception e) {
-        String errorString = null;
-        if (e instanceof UnsupportedDrmException) {
-            // Special case DRM failures.
-            UnsupportedDrmException unsupportedDrmException = (UnsupportedDrmException) e;
-            errorString = mContext.getString(Util.SDK_INT < 18 ? R.string.error_drm_not_supported
-                    : unsupportedDrmException.reason == UnsupportedDrmException.REASON_UNSUPPORTED_SCHEME
-                    ? R.string.error_drm_unsupported_scheme : R.string.error_drm_unknown);
-        } else if (e instanceof ExoPlaybackException
-                && e.getCause() instanceof MediaCodecTrackRenderer.DecoderInitializationException) {
-            // Special case for decoder initialization failures.
-            MediaCodecTrackRenderer.DecoderInitializationException decoderInitializationException =
-                    (MediaCodecTrackRenderer.DecoderInitializationException) e.getCause();
-            if (decoderInitializationException.decoderName == null) {
-                if (decoderInitializationException.getCause() instanceof MediaCodecUtil.DecoderQueryException) {
-                    errorString = mContext.getString(R.string.error_querying_decoders);
-                } else if (decoderInitializationException.secureDecoderRequired) {
-                    errorString = mContext.getString(R.string.error_no_secure_decoder,
-                            decoderInitializationException.mimeType);
-                } else {
-                    errorString = mContext.getString(R.string.error_no_decoder,
-                            decoderInitializationException.mimeType);
-                }
-            } else {
-                errorString = mContext.getString(R.string.error_instantiating_decoder,
-                        decoderInitializationException.decoderName);
-            }
-        }
-        if (errorString != null) {
-            Toast.makeText(mContext, errorString, Toast.LENGTH_LONG).show();
+        if(mListener != null) {
+            mListener.onError(e);
         }
         playerNeedsPrepare = true;
     }
 
     @Override
     public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
-        videoFrame.setAspectRatio(height == 0 ? 1 : (width * pixelWidthHeightRatio) / height);
+        if(mListener != null) {
+            mListener.onVideoSizeChanged(width, height, unappliedRotationDegrees, pixelWidthHeightRatio);
+        }
     }
 
     // SurfaceHolder.Callback implementation
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        if (player != null) {
-            player.setSurface(holder.getSurface());
+        if (mMediaPlayer != null) {
+            mMediaPlayer.setSurface(holder.getSurface());
         }
     }
 
@@ -293,8 +298,13 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        if (player != null) {
-            player.blockingClearSurface();
+        if (mMediaPlayer != null) {
+            mMediaPlayer.blockingClearSurface();
         }
+    }
+
+    // Getters and Setters
+    public void setExoPlayerListener(ExoMediaPlayer.Listener listener) {
+        mListener = listener;
     }
 }

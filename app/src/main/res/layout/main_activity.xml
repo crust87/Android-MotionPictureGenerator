@@ -27,8 +27,8 @@
         android:layout_height="match_parent"
         android:layout_gravity="center">
 
-        <SurfaceView
-            android:id="@+id/surface_view"
+        <com.crust87.motionpicturegenerator.player.ExoVideoView
+            android:id="@+id/videoView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center" />

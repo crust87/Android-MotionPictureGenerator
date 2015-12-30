@@ -22,11 +22,17 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
+import android.widget.Toast;
 
 import com.crust87.motionpicturegenerator.player.ExoMediaPlayer;
 import com.crust87.motionpicturegenerator.player.ExoVideoView;
 import com.crust87.videotrackview.VideoTrackView;
 import com.google.android.exoplayer.AspectRatioFrameLayout;
+import com.google.android.exoplayer.ExoPlaybackException;
+import com.google.android.exoplayer.MediaCodecTrackRenderer;
+import com.google.android.exoplayer.MediaCodecUtil;
+import com.google.android.exoplayer.drm.UnsupportedDrmException;
+import com.google.android.exoplayer.util.Util;
 
 /**
  * An activity that plays media using {@link ExoMediaPlayer}.
@@ -57,10 +63,58 @@ public class MainActivity extends Activity {
         setContentView(R.layout.main_activity);
 
         videoFrame = (AspectRatioFrameLayout) findViewById(R.id.video_frame);
+        mVideoView = (ExoVideoView) findViewById(R.id.videoView);
         mAnchorVideoTrackView = (VideoTrackView) findViewById(R.id.anchorVideoTrackView);
 
         mAnchorOverlay = new AnchorOverlay(getApplicationContext());
         mAnchorVideoTrackView.setVideoTrackOverlay(mAnchorOverlay);
+
+        mVideoView.setExoPlayerListener(new ExoMediaPlayer.Listener() {
+            @Override
+            public void onStateChanged(boolean playWhenReady, int playbackState) {
+                if (playbackState == com.google.android.exoplayer.ExoPlayer.STATE_ENDED) {
+                }
+            }
+
+            @Override
+            public void onError(Exception e) {
+                String errorString = null;
+                if (e instanceof UnsupportedDrmException) {
+                    // Special case DRM failures.
+                    UnsupportedDrmException unsupportedDrmException = (UnsupportedDrmException) e;
+                    errorString = getString(Util.SDK_INT < 18 ? R.string.error_drm_not_supported
+                            : unsupportedDrmException.reason == UnsupportedDrmException.REASON_UNSUPPORTED_SCHEME
+                            ? R.string.error_drm_unsupported_scheme : R.string.error_drm_unknown);
+                } else if (e instanceof ExoPlaybackException
+                        && e.getCause() instanceof MediaCodecTrackRenderer.DecoderInitializationException) {
+                    // Special case for decoder initialization failures.
+                    MediaCodecTrackRenderer.DecoderInitializationException decoderInitializationException =
+                            (MediaCodecTrackRenderer.DecoderInitializationException) e.getCause();
+                    if (decoderInitializationException.decoderName == null) {
+                        if (decoderInitializationException.getCause() instanceof MediaCodecUtil.DecoderQueryException) {
+                            errorString = getString(R.string.error_querying_decoders);
+                        } else if (decoderInitializationException.secureDecoderRequired) {
+                            errorString = getString(R.string.error_no_secure_decoder,
+                                    decoderInitializationException.mimeType);
+                        } else {
+                            errorString = getString(R.string.error_no_decoder,
+                                    decoderInitializationException.mimeType);
+                        }
+                    } else {
+                        errorString = getString(R.string.error_instantiating_decoder,
+                                decoderInitializationException.decoderName);
+                    }
+                }
+                if (errorString != null) {
+                    Toast.makeText(getApplicationContext(), errorString, Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
+                videoFrame.setAspectRatio(height == 0 ? 1 : (width * pixelWidthHeightRatio) / height);
+            }
+        });
 
         mAnchorOverlay.setOnUpdateAnchorListener(new AnchorOverlay.OnUpdateAnchorListener() {
             @Override
