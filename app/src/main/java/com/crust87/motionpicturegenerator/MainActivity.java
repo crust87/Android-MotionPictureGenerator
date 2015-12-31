@@ -142,7 +142,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == 1000 && resultCode == RESULT_OK) {
-            mVideoView.release();
+            mVideoView.stopPlayback();
 
             Uri contentUri = data.getData();
             mVideoView.setContentUri(contentUri);
@@ -184,8 +184,7 @@ public class MainActivity extends Activity {
     public void onDestroy() {
         super.onDestroy();
 
-        mVideoView.pause();
-        mVideoView.release();
+        mVideoView.stopPlayback();
     }
 
 }

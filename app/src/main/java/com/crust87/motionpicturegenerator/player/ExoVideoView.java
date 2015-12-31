@@ -14,6 +14,7 @@ import com.google.android.exoplayer.audio.AudioCapabilitiesReceiver;
 import com.google.android.exoplayer.metadata.GeobMetadata;
 import com.google.android.exoplayer.metadata.PrivMetadata;
 import com.google.android.exoplayer.metadata.TxxxMetadata;
+import com.google.android.exoplayer.util.PlayerControl;
 import com.google.android.exoplayer.util.Util;
 
 import java.util.Map;
@@ -29,22 +30,23 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
 
     private static String TAG ="ExoVideoView";
 
+    // View Components
     private Context mContext;
 
+    // Media Player Components
     private ExoMediaPlayer mMediaPlayer;
-
+    private PlayerControl mPlayerControl;
     private EventLogger eventLogger;
-
     private AudioCapabilitiesReceiver audioCapabilitiesReceiver;
 
+    // Listeners
     private ExoMediaPlayer.Listener mListener;
 
+    // Attributes
     private Uri mContentUri;
-
-    private long playerPosition;
-
     private boolean playerNeedsPrepare;
 
+    // Constructors
     public ExoVideoView(Context context) {
         super(context);
 
@@ -83,11 +85,6 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
         audioCapabilitiesReceiver.unregister();
     }
 
-    public void release() {
-        releasePlayer();
-        playerPosition = 0;
-    }
-
     public void setContentUri(Uri contentUri) {
         mContentUri = contentUri;
 
@@ -97,9 +94,9 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
     public void preparePlayer(boolean playWhenReady) {
         if (mMediaPlayer == null) {
             mMediaPlayer = new ExoMediaPlayer(getRendererBuilder());
+            mPlayerControl = mMediaPlayer.getPlayerControl();
             mMediaPlayer.addListener(this);
             mMediaPlayer.setMetadataListener(this);
-            mMediaPlayer.seekTo(playerPosition);
             playerNeedsPrepare = true;
             eventLogger = new EventLogger();
             eventLogger.startSession();
@@ -117,11 +114,11 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
         mMediaPlayer.setPlayWhenReady(playWhenReady);
     }
 
-    private void releasePlayer() {
+    public void stopPlayback() {
         if (mMediaPlayer != null) {
-            playerPosition = mMediaPlayer.getCurrentPosition();
             mMediaPlayer.release();
             mMediaPlayer = null;
+            mPlayerControl = null;
             eventLogger.endSession();
             eventLogger = null;
         }
@@ -138,7 +135,7 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
     public void onAudioCapabilitiesChanged(AudioCapabilities audioCapabilities) {
         boolean backgrounded = mMediaPlayer.getBackgrounded();
         boolean playWhenReady = mMediaPlayer.getPlayWhenReady();
-        releasePlayer();
+        stopPlayback();
         preparePlayer(playWhenReady);
         mMediaPlayer.setBackgrounded(backgrounded);
     }
@@ -146,22 +143,22 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
     // MediaController.MediaPlayerControl implementation
     @Override
     public void start() {
-        if(mMediaPlayer != null) {
-            mMediaPlayer.getPlayerControl().start();
+        if(mPlayerControl != null) {
+            mPlayerControl.start();
         }
     }
 
     @Override
     public void pause() {
-        if(mMediaPlayer != null) {
-            mMediaPlayer.getPlayerControl().pause();
+        if(mPlayerControl != null) {
+            mPlayerControl.pause();
         }
     }
 
     @Override
     public int getDuration() {
-        if(mMediaPlayer != null) {
-            return mMediaPlayer.getPlayerControl().getDuration();
+        if(mPlayerControl != null) {
+            return mPlayerControl.getDuration();
         } else {
             return 0;
         }
@@ -169,8 +166,8 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
 
     @Override
     public int getCurrentPosition() {
-        if(mMediaPlayer != null) {
-            return mMediaPlayer.getPlayerControl().getCurrentPosition();
+        if(mPlayerControl != null) {
+            return mPlayerControl.getCurrentPosition();
         } else {
             return 0;
         }
@@ -178,15 +175,15 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
 
     @Override
     public void seekTo(int pos) {
-        if(mMediaPlayer != null) {
-            mMediaPlayer.getPlayerControl().seekTo(pos);
+        if(mPlayerControl != null) {
+            mPlayerControl.seekTo(pos);
         }
     }
 
     @Override
     public boolean isPlaying() {
-        if(mMediaPlayer != null) {
-            return mMediaPlayer.getPlayerControl().isPlaying();
+        if(mPlayerControl != null) {
+            return mPlayerControl.isPlaying();
         } else {
             return false;
         }
@@ -194,8 +191,8 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
 
     @Override
     public int getBufferPercentage() {
-        if(mMediaPlayer != null) {
-            return mMediaPlayer.getPlayerControl().getBufferPercentage();
+        if(mPlayerControl != null) {
+            return mPlayerControl.getBufferPercentage();
         } else {
             return 0;
         }
@@ -203,8 +200,8 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
 
     @Override
     public boolean canPause() {
-        if(mMediaPlayer != null) {
-            return mMediaPlayer.getPlayerControl().canPause();
+        if(mPlayerControl != null) {
+            return mPlayerControl.canPause();
         } else {
             return false;
         }
@@ -212,8 +209,8 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
 
     @Override
     public boolean canSeekBackward() {
-        if(mMediaPlayer != null) {
-            return mMediaPlayer.getPlayerControl().canSeekBackward();
+        if(mPlayerControl != null) {
+            return mPlayerControl.canSeekBackward();
         } else {
             return false;
         }
@@ -221,8 +218,8 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
 
     @Override
     public boolean canSeekForward() {
-        if(mMediaPlayer != null) {
-            return mMediaPlayer.getPlayerControl().canSeekForward();
+        if(mPlayerControl != null) {
+            return mPlayerControl.canSeekForward();
         } else {
             return false;
         }
@@ -230,8 +227,8 @@ public class ExoVideoView extends SurfaceView implements SurfaceHolder.Callback,
 
     @Override
     public int getAudioSessionId() {
-        if(mMediaPlayer != null) {
-            return mMediaPlayer.getPlayerControl().getAudioSessionId();
+        if(mPlayerControl != null) {
+            return mPlayerControl.getAudioSessionId();
         } else {
             return 0;
         }
