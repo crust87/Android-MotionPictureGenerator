@@ -24,7 +24,6 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Toast;
 
-import com.crust87.motionpicturegenerator.player.ExoMediaPlayer;
 import com.crust87.motionpicturegenerator.player.ExoVideoView;
 import com.crust87.videotrackview.VideoTrackView;
 import com.google.android.exoplayer.AspectRatioFrameLayout;
@@ -34,9 +33,6 @@ import com.google.android.exoplayer.MediaCodecUtil;
 import com.google.android.exoplayer.drm.UnsupportedDrmException;
 import com.google.android.exoplayer.util.Util;
 
-/**
- * An activity that plays media using {@link ExoMediaPlayer}.
- */
 public class MainActivity extends Activity {
 
     private static final String TAG = "MainActivity";
@@ -69,7 +65,7 @@ public class MainActivity extends Activity {
         mAnchorOverlay = new AnchorOverlay(getApplicationContext());
         mAnchorVideoTrackView.setVideoTrackOverlay(mAnchorOverlay);
 
-        mVideoView.setExoPlayerListener(new ExoMediaPlayer.Listener() {
+        mVideoView.addListener(new ExoVideoView.Listener() {
             @Override
             public void onStateChanged(boolean playWhenReady, int playbackState) {
                 if (playbackState == com.google.android.exoplayer.ExoPlayer.STATE_ENDED) {

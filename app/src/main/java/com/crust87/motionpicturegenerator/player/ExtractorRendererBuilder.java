@@ -32,7 +32,7 @@ import com.google.android.exoplayer.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer.upstream.DefaultUriDataSource;
 
 
-public class ExtractorRendererBuilder implements ExoMediaPlayer.RendererBuilder {
+public class ExtractorRendererBuilder implements ExoVideoView.RendererBuilder {
 
     private static final int BUFFER_SEGMENT_SIZE = 64 * 1024;
     private static final int BUFFER_SEGMENT_COUNT = 256;
@@ -48,29 +48,29 @@ public class ExtractorRendererBuilder implements ExoMediaPlayer.RendererBuilder 
     }
 
     @Override
-    public void buildRenderers(ExoMediaPlayer player) {
+    public void buildRenderers(ExoVideoView videoView) {
         Allocator allocator = new DefaultAllocator(BUFFER_SEGMENT_SIZE);
 
         // Build the video and audio renderers.
-        DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter(player.getMainHandler(),
+        DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter(videoView.getMainHandler(),
                 null);
         DataSource dataSource = new DefaultUriDataSource(context, bandwidthMeter, userAgent);
         ExtractorSampleSource sampleSource = new ExtractorSampleSource(uri, dataSource, allocator,
                 BUFFER_SEGMENT_COUNT * BUFFER_SEGMENT_SIZE);
         MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(context,
-                sampleSource, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000, player.getMainHandler(),
-                player, 50);
+                sampleSource, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000, videoView.getMainHandler(),
+                videoView, 50);
         MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource,
-                null, true, player.getMainHandler(), player, AudioCapabilities.getCapabilities(context));
-        TrackRenderer textRenderer = new TextTrackRenderer(sampleSource, player,
-                player.getMainHandler().getLooper());
+                null, true, videoView.getMainHandler(), videoView, AudioCapabilities.getCapabilities(context));
+        TrackRenderer textRenderer = new TextTrackRenderer(sampleSource, videoView,
+                videoView.getMainHandler().getLooper());
 
         // Invoke the callback.
-        TrackRenderer[] renderers = new TrackRenderer[ExoMediaPlayer.RENDERER_COUNT];
-        renderers[ExoMediaPlayer.TYPE_VIDEO] = videoRenderer;
-        renderers[ExoMediaPlayer.TYPE_AUDIO] = audioRenderer;
-        renderers[ExoMediaPlayer.TYPE_TEXT] = textRenderer;
-        player.onRenderers(renderers, bandwidthMeter);
+        TrackRenderer[] renderers = new TrackRenderer[ExoVideoView.RENDERER_COUNT];
+        renderers[ExoVideoView.TYPE_VIDEO] = videoRenderer;
+        renderers[ExoVideoView.TYPE_AUDIO] = audioRenderer;
+        renderers[ExoVideoView.TYPE_TEXT] = textRenderer;
+        videoView.onRenderers(renderers, bandwidthMeter);
     }
 
     @Override
