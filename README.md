@@ -1,5 +1,5 @@
 # Android-MotionPictureGenerator
 
-with ExoPlayer
+with ExoPlayer and FFmpeg
 
 no library project
