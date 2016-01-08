@@ -18,7 +18,7 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:focusable="true"
+    android:background="@color/background"
     android:keepScreenOn="true">
 
     <com.google.android.exoplayer.AspectRatioFrameLayout
@@ -34,12 +34,6 @@
             android:layout_gravity="center" />
 
     </com.google.android.exoplayer.AspectRatioFrameLayout>
-
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:onClick="onLoadButtonClicked"
-        android:text="LOAD VIDEO" />
 
     <com.crust87.videotrackview.VideoTrackView
         android:id="@+id/anchorVideoTrackView"

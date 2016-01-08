@@ -75,6 +75,7 @@ public class ExoVideoView extends SurfaceView implements
     public static final int TRACK_DEFAULT = com.google.android.exoplayer.ExoPlayer.TRACK_DEFAULT;
 
     public static final int RENDERER_COUNT = 4;
+
     public static final int TYPE_VIDEO = 0;
     public static final int TYPE_AUDIO = 1;
     public static final int TYPE_TEXT = 2;
@@ -98,7 +99,7 @@ public class ExoVideoView extends SurfaceView implements
 
     // Media Player Components
     private PlayerControl mPlayerControl;
-    private AudioCapabilitiesReceiver audioCapabilitiesReceiver;
+    private AudioCapabilitiesReceiver mAudioCapabilitiesReceiver;
 
     // Listener
     private CaptionListener mCaptionListener;
@@ -143,21 +144,21 @@ public class ExoVideoView extends SurfaceView implements
         init();
     }
 
+    @Override
+    protected void onDetachedFromWindow() {
+        mAudioCapabilitiesReceiver.unregister();
+
+        super.onDetachedFromWindow();
+    }
+
     private void init() {
         mHandler = new Handler();
         mListeners = new CopyOnWriteArrayList<>();
 
         getHolder().addCallback(mSurfaceHolderCallback);
 
-        audioCapabilitiesReceiver = new AudioCapabilitiesReceiver(mContext, this);
-        audioCapabilitiesReceiver.register();
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-
-        audioCapabilitiesReceiver.unregister();
+        mAudioCapabilitiesReceiver = new AudioCapabilitiesReceiver(mContext, this);
+        mAudioCapabilitiesReceiver.register();
     }
 
     public void setContentUri(Uri contentUri) {
@@ -180,7 +181,15 @@ public class ExoVideoView extends SurfaceView implements
         }
 
         if (playerNeedsPrepare) {
-            prepare();
+            if (rendererBuildingState == RENDERER_BUILDING_STATE_BUILT) {
+                mMediaPlayer.stop();
+            }
+            mRendererBuilder.cancel();
+            mVideoFormat = null;
+            mVideoRenderer = null;
+            rendererBuildingState = RENDERER_BUILDING_STATE_BUILDING;
+            maybeReportPlayerState();
+            mRendererBuilder.buildRenderers(this);
             playerNeedsPrepare = false;
         }
 
@@ -396,18 +405,6 @@ public class ExoVideoView extends SurfaceView implements
         if (type == TYPE_TEXT && index < 0 && mCaptionListener != null) {
             mCaptionListener.onCues(Collections.<Cue>emptyList());
         }
-    }
-
-    public void prepare() {
-        if (rendererBuildingState == RENDERER_BUILDING_STATE_BUILT) {
-            mMediaPlayer.stop();
-        }
-        mRendererBuilder.cancel();
-        mVideoFormat = null;
-        mVideoRenderer = null;
-        rendererBuildingState = RENDERER_BUILDING_STATE_BUILDING;
-        maybeReportPlayerState();
-        mRendererBuilder.buildRenderers(this);
     }
 
     public void setBackgrounded(boolean backgrounded) {
