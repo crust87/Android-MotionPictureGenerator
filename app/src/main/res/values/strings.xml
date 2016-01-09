@@ -19,6 +19,10 @@
     <!-- The user visible name of the application. [CHAR LIMIT=20] -->
     <string name="application_name">Motion Picture Generator</string>
 
+    <!-- Action Bar -->
+    <string name="action_open">Open</string>
+    <string name="action_crop">Crop</string>
+
     <string name="enable_background_audio">Play in background</string>
 
     <string name="video">Video</string>
