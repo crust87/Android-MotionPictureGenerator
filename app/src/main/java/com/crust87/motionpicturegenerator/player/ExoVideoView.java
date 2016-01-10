@@ -52,7 +52,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class ExoVideoView extends SurfaceView implements
         MediaController.MediaPlayerControl,
-        AudioCapabilitiesReceiver.Listener,
         ChunkSampleSource.EventListener,
         HlsSampleSource.EventListener,
         DefaultBandwidthMeter.EventListener,
@@ -157,7 +156,7 @@ public class ExoVideoView extends SurfaceView implements
 
         getHolder().addCallback(mSurfaceHolderCallback);
 
-        mAudioCapabilitiesReceiver = new AudioCapabilitiesReceiver(mContext, this);
+        mAudioCapabilitiesReceiver = new AudioCapabilitiesReceiver(mContext, mAudioListener);
         mAudioCapabilitiesReceiver.register();
     }
 
@@ -214,12 +213,14 @@ public class ExoVideoView extends SurfaceView implements
     }
 
     // AudioCapabilitiesReceiver.Listener methods
-    @Override
-    public void onAudioCapabilitiesChanged(AudioCapabilities audioCapabilities) {
-        stopPlayback();
-        preparePlayer(mMediaPlayer.getPlayWhenReady());
-        setBackgrounded(backgrounded);
-    }
+    private AudioCapabilitiesReceiver.Listener mAudioListener = new AudioCapabilitiesReceiver.Listener() {
+        @Override
+        public void onAudioCapabilitiesChanged(AudioCapabilities audioCapabilities) {
+            stopPlayback();
+            preparePlayer(mMediaPlayer.getPlayWhenReady());
+            setBackgrounded(backgrounded);
+        }
+    };
 
     // MediaController.MediaPlayerControl implementation
     @Override
@@ -484,14 +485,9 @@ public class ExoVideoView extends SurfaceView implements
         return mMediaPlayer.getTrackFormat(type, index);
     }
 
-
-
     public boolean getBackgrounded() {
         return backgrounded;
     }
-
-
-
 
 
     /**
