@@ -1,6 +1,7 @@
 package com.crust87.motionpicturegenerator.player;
 
 import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.media.MediaCodec;
 import android.net.Uri;
 import android.os.Handler;
@@ -8,8 +9,7 @@ import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
+import android.view.TextureView;
 import android.widget.MediaController;
 
 import com.google.android.exoplayer.CodecCounters;
@@ -50,7 +50,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * Created by mabi on 2015. 12. 30..
  */
-public class ExoVideoView extends SurfaceView implements
+public class ExoVideoView extends TextureView implements
         MediaController.MediaPlayerControl,
         ChunkSampleSource.EventListener,
         HlsSampleSource.EventListener,
@@ -87,6 +87,7 @@ public class ExoVideoView extends SurfaceView implements
     // View Components
     private Context mContext;
     private Handler mHandler;
+    private Surface mSurface;
 
     // ExoPlayer Components
     private RendererBuilder mRendererBuilder;
@@ -154,7 +155,7 @@ public class ExoVideoView extends SurfaceView implements
         mHandler = new Handler();
         mListeners = new CopyOnWriteArrayList<>();
 
-        getHolder().addCallback(mSurfaceHolderCallback);
+        setSurfaceTextureListener(mSurfaceTextureListener);
 
         mAudioCapabilitiesReceiver = new AudioCapabilitiesReceiver(mContext, mAudioListener);
         mAudioCapabilitiesReceiver.register();
@@ -371,25 +372,36 @@ public class ExoVideoView extends SurfaceView implements
         mListener.onVideoSizeChanged(width, height, unappliedRotationDegrees, pixelWidthHeightRatio);
     }
 
-    // SurfaceHolder.Callback implementation
-    private SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
+    private SurfaceTextureListener mSurfaceTextureListener = new SurfaceTextureListener() {
         @Override
-        public void surfaceCreated(SurfaceHolder holder) {
+        public void onSurfaceTextureAvailable(SurfaceTexture surface, final int width, final int height) {
+            mSurface = new Surface(surface);
+
             if (mMediaPlayer != null) {
                 pushSurface(false);
             }
         }
 
         @Override
-        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            // Do nothing.
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, final int width, final int height) {
         }
 
         @Override
-        public void surfaceDestroyed(SurfaceHolder holder) {
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
             if (mMediaPlayer != null) {
                 pushSurface(true);
             }
+
+            if (mSurface != null) {
+                mSurface.release();
+                mSurface = null;
+            }
+
+            return true;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
         }
     };
 
@@ -428,9 +440,9 @@ public class ExoVideoView extends SurfaceView implements
         }
 
         if (blockForSurfacePush) {
-            mMediaPlayer.blockingSendMessage(mVideoRenderer, MediaCodecVideoTrackRenderer.MSG_SET_SURFACE, getHolder().getSurface());
+            mMediaPlayer.blockingSendMessage(mVideoRenderer, MediaCodecVideoTrackRenderer.MSG_SET_SURFACE, mSurface);
         } else {
-            mMediaPlayer.sendMessage(mVideoRenderer, MediaCodecVideoTrackRenderer.MSG_SET_SURFACE, getHolder().getSurface());
+            mMediaPlayer.sendMessage(mVideoRenderer, MediaCodecVideoTrackRenderer.MSG_SET_SURFACE, mSurface);
         }
     }
 
