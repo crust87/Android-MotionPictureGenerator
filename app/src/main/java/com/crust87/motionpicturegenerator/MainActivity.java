@@ -79,7 +79,10 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.main_activity);
 
-        initFFmpeg();
+        if(!initFFmpeg()) {
+            finish();
+            return;
+        }
 
         videoFrame = (AspectRatioFrameLayout) findViewById(R.id.video_frame);
         mVideoView = (ExoVideoView) findViewById(R.id.videoView);
@@ -123,13 +126,15 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void initFFmpeg() {
+    private boolean initFFmpeg() {
         try {
             InputStream ffmpegFileStream = getApplicationContext().getAssets().open("ffmpeg");
             mExecutor = new FFmpegExecutor(getApplicationContext(), ffmpegFileStream);
+
+            return true;
         } catch (Exception e) {
             Toast.makeText(getApplicationContext(), "Fail FFmpeg Setting", Toast.LENGTH_LONG).show();
-            finish();
+            return false;
         }
     }
 
